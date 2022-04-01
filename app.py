@@ -4,7 +4,6 @@ import numpy as np
 import pydeck as pdk
 import plotly.express as px
 
-
 DATA_URL = (
     "dataset.csv"
 )
@@ -26,7 +25,27 @@ data = load_data(100000)
 
 st.header("Where are the most people injured in NYC?")
 injured_people = st.slider("Number of persons injured in vehicle collisions", 0, 19)
-st.map(data.query("injured_persons >= @injured_people")[["latitude", "longitude"]].dropna(how="any"))
+df = data.query("injured_persons >= @injured_people")[["latitude", "longitude"]].dropna(how="any")
+midpoint = (np.average(df["latitude"]), np.average(df["longitude"]))
+
+st.write(pdk.Deck(
+    map_style="mapbox://styles/mapbox/light-v9",
+    initial_view_state={
+        "latitude": midpoint[0],
+        "longitude": midpoint[1],
+        "zoom": 9,
+        "pitch": 0,
+    },
+    layers=[
+        pdk.Layer(
+        "ScatterplotLayer",
+        data=df,
+        get_position=["longitude", "latitude"],
+        get_color='[200, 30, 0, 160]',
+        get_radius=200,
+        ),
+    ],
+))
 
 st.header("How many collisions occur during a given time of day?")
 hour = st.slider("Hour to look at", 0, 23)
@@ -79,7 +98,6 @@ elif select == 'Cyclists':
 
 else:
     st.write(original_data.query("injured_motorists >= 1")[["on_street_name", "injured_motorists"]].sort_values(by=['injured_motorists'], ascending=False).dropna(how="any")[:5])
-
 
 if st.checkbox("Show Raw Data", False):
     st.subheader('Raw Data')
